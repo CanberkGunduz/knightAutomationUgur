@@ -1,3 +1,4 @@
+import numpy as np
 import pyautogui as p
 import pydirectinput
 import keyboard
@@ -5,6 +6,8 @@ import tkinter as tk
 import PIL
 import cv2
 import time
+
+from PIL import ImageGrab
 from pynput.mouse import Button, Controller
 import threading
 
@@ -16,12 +19,13 @@ p.useImageNotFoundException()
 # Disable fail-safe
 # p.FAILSAFE = False
 
-
-
 class KnightBot:
+
     def __init__(self):
         self.detector = ImageDetector()
         self.misc_images, self.weapon_images = self.detector.register_images()
+        # self.game_cycle()
+        self.is_valuable_item_inv()
 
     def game_cycle(self):
         while True:
@@ -197,20 +201,20 @@ class KnightBot:
                 i += 1
                 i = i % 2
             if len(item_coordinates) + len(empty_slots) == 14:
-                return True, list(item_coordinates)
+                return True, item_coordinates, empty_slots
 
     def locate_valuable_items_in_inv(self):
-        valuable_item_in_inv_coordinates = []
+        valuable_item_in_inv_coordinates = set()
         self.open_inventory()
-        did_locate_all_items, item_coordinates = self.locate_items_in_inventory()
+        did_locate_all_items, item_coordinates, _ = self.locate_items_in_inventory()
         if did_locate_all_items:
             for item in item_coordinates:
                 p.moveTo(item[0],item[1],1)
                 time.sleep(1)
                 is_valuable = self.is_valuable_item_inv()
                 if is_valuable:
-                    valuable_item_in_inv_coordinates.append(item)
-            return valuable_item_in_inv_coordinates
+                    valuable_item_in_inv_coordinates.add(item)
+            return item_coordinates-valuable_item_in_inv_coordinates, valuable_item_in_inv_coordinates
         else: print("error in locating all items in inventory")
 
     def locate_items_in_vip_inventory(self):
@@ -237,45 +241,57 @@ class KnightBot:
                 i += 1
                 i = i % 8
             if len(item_coordinates) + len(empty_slots) == 48:
-                return True, list(item_coordinates)
+                return True, item_coordinates, empty_slots
 
     def locate_valuable_items_in_vip(self):
-        valuable_item_in_vip_coordinates = []
+        valuable_item_in_vip_coordinates = set()
         self.open_vip_inventory()
-        did_locate_all_items, item_coordinates = self.locate_items_in_vip_inventory()
+        did_locate_all_items, item_coordinates, _ = self.locate_items_in_vip_inventory()
         if did_locate_all_items:
             for item in item_coordinates:
                 p.moveTo(item[0],item[1],1)
                 time.sleep(1)
                 is_valuable = self.is_valuable_item_vip()
                 if is_valuable:
-                    valuable_item_in_vip_coordinates.append(item)
-            return valuable_item_in_vip_coordinates
+                    valuable_item_in_vip_coordinates.add(item)
+            return item_coordinates-valuable_item_in_vip_coordinates, valuable_item_in_vip_coordinates
         else: print("error in locating all items in inventory")
 
-    def take_items_from_vip(self, did_locate_all_items, vip_item_coordinates, inv_empty_slot):
+    def take_items_from_vip(self, vip_item_coordinates, inv_empty_slot):
 
         # 315,80 vip ilk item 51-51 geçiş. 570,437 son item. 8 row, 6 col
         # check region  tl0,0/br620,530
 
-        if did_locate_all_items:
-            items_to_take_count = min(len(vip_item_coordinates), inv_empty_slot)
-            print("items:", vip_item_coordinates)
-            for i in range(items_to_take_count):
-                item = vip_item_coordinates.pop()
-                p.moveTo(item[0],item[1],1)
-                time.sleep(1)
-                is_valuable = self.is_valuable_item_vip()
-                if not is_valuable:
-                    self.mouse_click("right", item[0], item[1])
-        else: print("error locating all items in vip inventory")
+        items_to_take_count = min(len(vip_item_coordinates), inv_empty_slot)
+        print("items:", vip_item_coordinates)
+        for i in range(items_to_take_count):
+            item = vip_item_coordinates.pop()
+            p.moveTo(item[0],item[1],1)
+            time.sleep(1)
+            is_valuable = self.is_valuable_item_vip()
+            if not is_valuable:
+                self.mouse_click("right", item[0], item[1])
         self.mouse_click("left", 1000, 32)
         self.press_esc()
 
-
+    def deposit_valuable_items_to_vip(self,valuable_items_inv,empty_slots_vip):
+        #vip is already open, transform valuable item coords and drag to empty vip coords
+        for item in range(len(valuable_items_inv)):
+            self.mouse_drag("left",valuable_items_inv[item][0],valuable_items_inv[item][1],
+                            empty_slots_vip[item][0],empty_slots_vip[item][1])
 
     def is_valuable_item_inv(self):
         # check region tl290,0/br1000,520
+        detector = self.detector
+        img = ImageGrab.grab(bbox=(0,0,1000,520))
+        img_cv2 = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+        print("entering loop")
+        for template in self.weapon_images:
+            detected, pos, located_precision = detector.locate_image_rgb(template[0],img_cv2,0.99)
+            if detected:
+                detector.detector_test(img_cv2,pos,template[1],template[2])
+                cv2.imshow("item found", template[0])
+                cv2.waitKey(0)
         return True
 
     def is_valuable_item_vip(self):
@@ -287,49 +303,48 @@ class KnightBot:
             while True:
                 time.sleep(1)
                 self.open_trade()
-                locatedAllItems, itemCoordinates, shell_items = self.locateItemsInInventory()
-                if locatedAllItems:
-                    for item in itemCoordinates:
-                        self.mouse_click("right",item[0], item[1])
-                    time.sleep(0.1)
-                    self.mouse_click("left",900, 460)
-                    time.sleep(0.5)
-                    self.mouse_click("left",725, 550)
+                items_to_sell, valuable_items = self.locate_valuable_items_in_inv()
+                for item in items_to_sell:
+                    self.mouse_click("right",item[0], item[1])
+                time.sleep(0.1)
+                self.mouse_click("left",900, 460)
+                time.sleep(0.5)
+                self.mouse_click("left",725, 550)
                 self.mouse_click("left",1000, 32)
                 self.press_esc()
                 time.sleep(1)
-                items, empty_slots = self.isInventoryEmpty()
-                if empty_slots + len(shell_items) == 14:
+                _, items, empty_slots = self.locate_items_in_inventory()
+                if len(empty_slots) + len(valuable_items) == 14:
                     break
             self.open_inventory()
             time.sleep(1)
             self.mouse_click("left",680, 340)
             # isVipFull = self.isVipInventoryFull()
             time.sleep(1)
-            locatedAllItemsVip, itemCoordinatesVip = self.locate_items_in_vip_inventory()
-            self.take_items_from_vip(locatedAllItemsVip, itemCoordinatesVip, empty_slots)
+            items_to_sell_vip, valuable_items_vip = self.locate_valuable_items_in_vip()
+            self.take_items_from_vip(items_to_sell_vip, empty_slots)
             self.press_esc()
             time.sleep(0.2)
-            items_vip, empty_vip_slots = self.isVipInventoryEmpty()
-            if empty_vip_slots + len(shell_items_vip) == 48:
+            _, items_vip, empty_slots_vip = self.locate_items_in_vip_inventory()
+            if len(empty_slots_vip)>=len(valuable_items):
+                self.deposit_valuable_items_to_vip(list(valuable_items),list(empty_slots_vip))
+            if len(empty_slots_vip) + len(valuable_items_vip) == 48:
                 break
         while True:
             time.sleep(0.4)
             self.open_trade()
-            locatedAllItems, itemCoordinates = self.locate_items_in_inventory()
-            if locatedAllItems:
-                for item in itemCoordinates:
-                    print(item)
-                    self.mouse_click("right",item[0], item[1])
-                time.sleep(0.1)
-                self.mouse_click("left",900, 460)
-                time.sleep(0.5)
-                self.mouse_click("left",725, 550)
-            self.mouse_click("left",1000, 32)
+            items_to_sell, valuable_items = self.locate_valuable_items_in_inv()
+            for item in items_to_sell:
+                self.mouse_click("right", item[0], item[1])
+            time.sleep(0.1)
+            self.mouse_click("left", 900, 460)
             time.sleep(0.5)
+            self.mouse_click("left", 725, 550)
+            self.mouse_click("left", 1000, 32)
             self.press_esc()
-            items, empty_slots = self.isInventoryEmpty()
-            if empty_slots + len(shell_items) == 14:
+            time.sleep(1)
+            _, items, empty_slots = self.locate_items_in_inventory()
+            if len(empty_slots) + len(valuable_items) == 14:
                 break
         self.change_perspective()
         self.change_perspective()
@@ -387,3 +402,5 @@ class KnightBot:
         self.key_press("esc")
         self.key_press("esc")
         self.key_press("esc")
+
+bot = KnightBot()
