@@ -10,6 +10,14 @@ p.useImageNotFoundException()
 # Disable fail-safe
 p.FAILSAFE = False
 
+#vipte en alt satırı boş bırak DONE
+#inventoryde repairda iki silah değil tek silah kalacak DONE
+#f9a geçmesine gerek yok çarlar f9da, f9dan çıkmasın DONE
+#magic bagler zaten açık DONE
+#ts 40lvl basacak repair bitince DONE
+#priestlerde sadece üstündekileri repair eden ve ts olmayan exe lazım DONE
+#monster stonelar ikinci magic bage atılacak eğer yer kalmadıysa çöpe atılacak DONE
+
 
 class KnightBot:
 
@@ -28,6 +36,7 @@ class KnightBot:
                     self.sell_items()
                     self.deposit_all_to_vip()
                     self.repair_items()
+                    self.ts_scroll()
                     time.sleep(600)
 
     def mouse_click(self, button, x, y, delay=0.1):
@@ -96,15 +105,10 @@ class KnightBot:
             return self.open_shop()
 
     def align_shop(self):
+        self.mouse_click("left", 790, 700)
         self.key_press("b")
         p.moveTo(500, -1)
         time.sleep(1)
-
-    def change_perspective(self):
-        self.mouse_click("left", 790, 700)
-        time.sleep(0.2)
-        self.key_press("f9")
-        time.sleep(0.2)
 
     def open_repair(self):
         x_loc = self.open_shop()
@@ -225,8 +229,8 @@ class KnightBot:
             j = j % 6
             if j == 0:
                 i += 1
-                i = i % 8
-            if len(item_coordinates) + len(empty_slots) == 48:
+                i = i % 7
+            if len(item_coordinates) + len(empty_slots) == 42:
                 return True, item_coordinates, empty_slots
 
     def locate_valuable_items_in_vip(self):
@@ -302,8 +306,49 @@ class KnightBot:
                     return True
         return False
 
+    def monster_stone(self):
+        bag2_empty_slots=[]
+        detector = self.detector
+
+        self.mouse_click("left",550,380)
+
+        for i in range(4):
+            for j in range(3):
+                x=480 + 51 * j
+                y=420 + 51 * i
+                if p.pixelMatchesColor(x,y,(0,0,0),30):
+                    bag2_empty_slots.append((x,y))
+
+        # print(bag2_empty_slots)
+
+        _, items, _ = self.locate_items_in_inventory()
+
+        for item in items:
+            p.moveTo(item[0],item[1],0.1)
+            img = ImageGrab.grab(bbox=(290, 0, 1000, 520))
+            img_cv2 = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+            ms_detected, ms_pos, ms_located_precision = detector.locate_image_rgb(self.misc_images[-1], img_cv2, 0.9)
+            if ms_detected:
+                if len(bag2_empty_slots)>0:
+                    empty_slot = bag2_empty_slots.pop()
+                    self.mouse_drag("left",item[0],item[1],empty_slot[0],empty_slot[1])
+                else:
+                    self.mouse_drag("left", item[0], item[1], 970,370)
+                    self.mouse_click("left",755,395)
+
+        self.mouse_click("left",485,380)
+
+    def ts_scroll(self):
+        self.key_press("0")
+        self.mouse_click("left",915, 115)
+        for _ in range(4):
+            self.key_press("return")
+        self.press_esc()
+
     def sell_items(self):
-        self.change_perspective()
+        self.open_inventory()
+        time.sleep(1)
+        self.monster_stone()
         while True:
             while True:
                 time.sleep(1)
@@ -333,7 +378,7 @@ class KnightBot:
                 self.deposit_valuable_items_to_vip(list(valuable_items))
             self.press_esc()
             time.sleep(0.2)
-            if len(empty_slots_vip) + len(valuable_items_vip) == 48:
+            if len(empty_slots_vip) + len(valuable_items_vip) == 42:
                 print("vip emptied")
                 break
         while True:
@@ -369,7 +414,6 @@ class KnightBot:
             for j in range(7):
                 self.mouse_click("left", 680 + j * 50, 440 + 50 * i)
         self.mouse_click("left", 680, 540)
-        self.mouse_click("left", 730, 540)
         self.mouse_click("left", 870, 370)
         self.mouse_click("left", 920, 370)
         self.mouse_click("left", 920, 320)
@@ -398,10 +442,6 @@ class KnightBot:
 
         self.press_esc()
 
-        self.change_perspective()
-        self.change_perspective()
-        self.change_perspective()
-
     def press_esc(self):
         time.sleep(0.1)
         self.key_press("esc")
@@ -423,7 +463,7 @@ class ImageDetector:
     def register_images(self):
         misc_img_names = ["bosalt_text", "genie_play_button_off", "genie_play_button_on",
                           "inventory_refresh_icon", "inventory_text", "shop_big_pic", "tyroon_shop_big_pic",
-                          "vip_chest_icon", "vip_inventory_identifier", "warehouse_text", "x_button"]
+                          "vip_chest_icon", "vip_inventory_identifier", "warehouse_text", "x_button","monster_stone_text"]
         weapon_img_names = ["large_breaker_4",
                             "large_breaker_6", "sword_breaker_4",
                             "tomahawk_5", "chitin_text", "iron_bow_text", ]
