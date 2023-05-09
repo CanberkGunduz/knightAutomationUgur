@@ -10,13 +10,21 @@ p.useImageNotFoundException()
 # Disable fail-safe
 p.FAILSAFE = False
 
-#vipte en alt satırı boş bırak DONE
-#inventoryde repairda iki silah değil tek silah kalacak DONE
-#f9a geçmesine gerek yok çarlar f9da, f9dan çıkmasın DONE
-#magic bagler zaten açık DONE
-#ts 40lvl basacak repair bitince DONE
-#priestlerde sadece üstündekileri repair eden ve ts olmayan exe lazım DONE
-#monster stonelar ikinci magic bage atılacak eğer yer kalmadıysa çöpe atılacak DONE
+# genie sırasında itemler yanarsa hammer basacak
+# icon veya chat algılama kullanılacak
+# sadece silah yandığında basmayacak, bütün armor yanınca sabit icon olunca basacak
+
+# vipte en alt satırı boş bırak DONE
+# inventoryde repairda iki silah değil tek silah kalacak DONE
+# f9a geçmesine gerek yok çarlar f9da, f9dan çıkmasın DONE
+# magic bagler zaten açık DONE
+# ts 40lvl basacak repair bitince DONE
+# priestlerde sadece üstündekileri repair eden ve ts olmayan exe lazım DONE
+# monster stonelar ikinci magic bage atılacak eğer yer kalmadıysa çöpe atılacak DONE
+
+# i3 3210 3220 3240 120gb ssd 4gb ram 2000 19w 4a 65w / 45watt
+# i3 4.nesil 2250 / g işlemci takabilir onları da 2ye
+# amd a10 yatay kasa 1500
 
 
 class KnightBot:
@@ -33,9 +41,12 @@ class KnightBot:
                 print("genie not active")
                 if self.is_bosalt_typed():
                     print("bosalt typed")
+                    time.sleep(3)
                     self.sell_items()
                     self.deposit_all_to_vip()
                     self.repair_items()
+                    self.ts_scroll()
+                    time.sleep(1)
                     self.ts_scroll()
                     time.sleep(600)
 
@@ -63,7 +74,7 @@ class KnightBot:
 
     def is_genie_active(self):
         detector = self.detector
-        img = ImageGrab.grab(bbox=(200, 0, 460, 150))
+        img = ImageGrab.grab(bbox=(660, 0, 840, 80))
         img_cv2 = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
         template = self.misc_images[1]
         detected, pos, located_precision = detector.locate_image_rgb(template, img_cv2, 0.9)
@@ -272,7 +283,7 @@ class KnightBot:
 
         mp_detected, mp_pos, mp_located_precision = detector.locate_image_rgb(self.mp_text, img_cv2, 0.9)
         for template_index in range(len(self.weapon_images)):
-            if template_index <= 3:
+            if template_index < 3:
                 detected, pos, located_precision = detector.locate_image_rgb(self.weapon_images[template_index],
                                                                              img_cv2, 0.95)
                 if detected and mp_detected:
@@ -292,7 +303,7 @@ class KnightBot:
         img_cv2 = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
         mp_detected, mp_pos, mp_located_precision = detector.locate_image_rgb(self.mp_text, img_cv2, 0.9)
         for template_index in range(len(self.weapon_images)):
-            if template_index <= 3:
+            if template_index < 3:
                 detected, pos, located_precision = detector.locate_image_rgb(self.weapon_images[template_index],
                                                                              img_cv2, 0.95)
                 if detected and mp_detected:
@@ -339,11 +350,16 @@ class KnightBot:
         self.mouse_click("left",485,380)
 
     def ts_scroll(self):
-        self.key_press("0")
+        self.mouse_click("left",20,490)
+        self.mouse_click("left",55,490)
+        time.sleep(0.5)
         self.mouse_click("left",915, 115)
-        for _ in range(4):
-            self.key_press("return")
+        self.mouse_click("left",890, 545)
+        time.sleep(0.5)
+        self.mouse_click("left",430, 440)
+
         self.press_esc()
+
 
     def sell_items(self):
         self.open_inventory()
@@ -410,16 +426,17 @@ class KnightBot:
                 self.mouse_click("right", 480 + 51 * j, 420 + 51 * i)
         time.sleep(1)
         self.open_repair()
-        for i in range(2):
-            for j in range(7):
-                self.mouse_click("left", 680 + j * 50, 440 + 50 * i)
-        self.mouse_click("left", 680, 540)
-        self.mouse_click("left", 870, 370)
-        self.mouse_click("left", 920, 370)
-        self.mouse_click("left", 920, 320)
-        self.mouse_click("left", 920, 220)
-        self.mouse_click("left", 920, 170)
-        self.mouse_click("left", 870, 270)
+        for _ in range(2):
+            for i in range(2):
+                for j in range(7):
+                    self.mouse_click("left", 680 + j * 50, 440 + 50 * i)
+            self.mouse_click("left", 680, 540)
+            self.mouse_click("left", 870, 370)
+            self.mouse_click("left", 920, 370)
+            self.mouse_click("left", 920, 320)
+            self.mouse_click("left", 920, 220)
+            self.mouse_click("left", 920, 170)
+            self.mouse_click("left", 870, 270)
 
         self.press_esc()
         self.open_inventory()
