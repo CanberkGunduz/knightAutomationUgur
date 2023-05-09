@@ -17,6 +17,7 @@ class KnightBot:
         self.detector = ImageDetector()
         self.misc_images, self.weapon_images, self.mp_text = self.detector.register_images()
         self.game_cycle()
+        #aaa
 
     def game_cycle(self):
         while True:
