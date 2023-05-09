@@ -10,23 +10,6 @@ p.useImageNotFoundException()
 # Disable fail-safe
 p.FAILSAFE = False
 
-# genie sırasında itemler yanarsa hammer basacak
-# icon veya chat algılama kullanılacak
-# sadece silah yandığında basmayacak, bütün armor yanınca sabit icon olunca basacak
-
-# vipte en alt satırı boş bırak DONE
-# inventoryde repairda iki silah değil tek silah kalacak DONE
-# f9a geçmesine gerek yok çarlar f9da, f9dan çıkmasın DONE
-# magic bagler zaten açık DONE
-# ts 40lvl basacak repair bitince DONE
-# priestlerde sadece üstündekileri repair eden ve ts olmayan exe lazım DONE
-# monster stonelar ikinci magic bage atılacak eğer yer kalmadıysa çöpe atılacak DONE
-
-# i3 3210 3220 3240 120gb ssd 4gb ram 2000 19w 4a 65w / 45watt
-# i3 4.nesil 2250 / g işlemci takabilir onları da 2ye
-# amd a10 yatay kasa 1500
-
-
 class KnightBot:
 
     def __init__(self):
