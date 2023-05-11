@@ -10,6 +10,7 @@ p.useImageNotFoundException()
 # Disable fail-safe
 p.FAILSAFE = False
 
+
 class KnightBot:
 
     def __init__(self):
@@ -28,6 +29,8 @@ class KnightBot:
                     self.sell_items()
                     self.deposit_all_to_vip()
                     self.repair_items()
+                    print("satis dongusu bitti")
+                    print("beklemeye gecildi")
                     time.sleep(600)
 
     def mouse_click(self, button, x, y, delay=0.1):
@@ -142,10 +145,8 @@ class KnightBot:
                 confidence=0.7,
                 region=(795, 355, 835, 395)
             )
-            print("inventory is open")
             return True
         except p.ImageNotFoundException:
-            print("inventory is closed")
             return False
 
     def open_bag(self):
@@ -197,7 +198,6 @@ class KnightBot:
                 is_valuable = self.is_valuable_item_inv()
                 if is_valuable:
                     valuable_item_in_inv_coordinates.add(item)
-            print(item_coordinates.difference(valuable_item_in_inv_coordinates), valuable_item_in_inv_coordinates)
             return item_coordinates.difference(valuable_item_in_inv_coordinates), valuable_item_in_inv_coordinates
         else:
             print("error in locating all items in inventory")
@@ -233,7 +233,6 @@ class KnightBot:
                 is_valuable = self.is_valuable_item_vip()
                 if is_valuable:
                     valuable_item_in_vip_coordinates.add(item)
-            print(item_coordinates.difference(valuable_item_in_vip_coordinates), valuable_item_in_vip_coordinates)
             return item_coordinates.difference(valuable_item_in_vip_coordinates), valuable_item_in_vip_coordinates
         else:
             print("error in locating all items in vip")
@@ -267,13 +266,11 @@ class KnightBot:
                 detected, pos, located_precision = detector.locate_image_rgb(self.weapon_images[template_index],
                                                                              img_cv2, 0.95)
                 if detected and mp_detected:
-                    print("valuable item")
                     return True
             else:
                 detected, pos, located_precision = detector.locate_image_rgb(self.weapon_images[template_index],
                                                                              img_cv2, 0.95)
                 if detected:
-                    print("valuable item")
                     return True
         return False
 
@@ -287,13 +284,11 @@ class KnightBot:
                 detected, pos, located_precision = detector.locate_image_rgb(self.weapon_images[template_index],
                                                                              img_cv2, 0.95)
                 if detected and mp_detected:
-                    print("valuable item")
                     return True
             else:
                 detected, pos, located_precision = detector.locate_image_rgb(self.weapon_images[template_index],
                                                                              img_cv2, 0.95)
                 if detected:
-                    print("valuable item")
                     return True
         return False
 
@@ -310,7 +305,6 @@ class KnightBot:
                 if p.pixelMatchesColor(x,y,(0,0,0),30):
                     bag2_empty_slots.append((x,y))
 
-        # print(bag2_empty_slots)
 
         _, items, _ = self.locate_items_in_inventory()
 
@@ -386,10 +380,9 @@ class KnightBot:
                 break
 
     def repair_items(self):
-        self.open_inventory()
+        self.open_repair()
         time.sleep(1)
         for _ in range(2):
-            self.mouse_click("left", 680, 540)
             self.mouse_click("left", 870, 370)
             self.mouse_click("left", 920, 370)
             self.mouse_click("left", 920, 320)
@@ -411,7 +404,6 @@ class ImageDetector:
     def locate_image_rgb(self, template, img_cv2, precision=0.9):
         res = cv2.matchTemplate(img_cv2, template[0], cv2.TM_CCOEFF_NORMED)
         min_val, located_precision, min_loc, pos = cv2.minMaxLoc(res)
-        print(template[3], located_precision, pos)
         detected = False
         if located_precision > precision:
             detected = True
@@ -439,7 +431,6 @@ class ImageDetector:
         target = cv2.imread(f"images/misc/mp_text.jpg")
         width, height = target.shape[::][0], target.shape[::][1]
         mp_text = (target, width, height, "mp_text")
-        print(f"{len(weapon_images)} {len(misc_images)}")
         return misc_images, weapon_images, mp_text
 
 
